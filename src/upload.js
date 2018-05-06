@@ -1,6 +1,5 @@
 import {createReadStream} from 'fs'
 import Debug from 'debug'
-import apkParser from 'node-apk-parser'
 import {androidpublisher} from 'googleapis'
 import assert from 'assert'
 
@@ -43,8 +42,19 @@ export default class Upload {
     debug('> Parsing manifest')
     // Wrapping in promise because apkParser throws in case of error
     return Promise.resolve().then(() => {
-      var reader = apkParser.readFile(this.apk[0])
-      var manifest = reader.readManifestSync()
+      const apkPath = this.apk[0];
+      // var reader = apkParser.readFile(this.apk[0])
+      // var manifest = reader.readManifestSync()
+      let info = require('child_process').execSync(`aapt d badging ${apkPath}`).toString();
+      let name = /package:.*name='([^\n\']+)'/g.exec(info)[1];
+      let versionCode = /package:.*versionCode='([^\n\']+)'/g.exec(info)[1];
+      let versionName = /package:.*versionName='([^\n\']+)'/g.exec(info)[1];
+      // var reader = apkParser.readFile();
+      // var manifest = reader.readManifestSync()
+      var manifest = {
+        package: name,
+        versionCode,
+      }
       this.packageName = manifest.package
       this.versionCode = manifest.versionCode
       debug('> Detected package name %s', this.packageName)
